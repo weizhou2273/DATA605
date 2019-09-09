@@ -1,0 +1,89 @@
+---
+title: "weizhou_hw2"
+author: "Wei Zhou"
+date: "9/6/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Question Set 1
+####1.1
+Show that AT A # AAT in general. (Proof and demonstration.)
+
+Proof: 
+Assum A is a 3\*2 matrix, then AT is 2\*3 matrix. 
+
+A \* AT should be a 3\*3 matrix, whereas AT\*A is a 2\*2 matrix
+
+Thus, A \* AT not equal to AT\*A in general
+
+Demonstration
+```{r}
+a = matrix(c(1, 4, 7, 2, 5, 8, 3), nrow=3, ncol=2)
+a
+t(a)
+a%*%t(a)
+t(a)%*%a
+```
+
+####1.2 
+For a special type of square matrix A, we get AT A = AAT Under what conditionscould this be true?
+
+When a matrix is Symmetric matrix or antisymmetric matrix or orthogonal matrix, AT \* A = A \* AT 
+
+
+
+## Problem Set 2 
+
+
+```{r}
+sfunc <- function (n, i, x) {
+  s <- diag (n)
+  s [i, i] <- x
+  return (s)
+}
+
+tfunc <- function (n, i, j, x) {
+  t <- diag (n)
+  t [i, j] <- x
+  return (t)    
+}
+
+gaussMatrixForward <- function (a, verbose = TRUE) {
+  n <- nrow (a)
+    for (i in 1 : n) {
+        a <- sfunc (n, i, 1 / a[i, i]) %*% a
+        if (i == n) {
+            break ()
+        }
+        for (j in (i + 1) : n) {
+            a <- tfunc (n, j, i, - a[j, i]) %*% a
+        }
+    }
+    return (a)
+}
+
+LU_decomp <- function (a) {
+  n <- nrow (a)
+    g <- gaussMatrixForward (cbind (a, diag (n)))
+  h <- gaussMatrixForward (cbind (g[, n + 1 : n], diag (n)))
+  return (list (L = h[, n + 1 : n], U = g [, 1 : n]))
+}
+```
+
+```{r}
+set.seed (12345)
+print (a <- matrix (sample (16), 4, 4))
+print (lu <- LU_decomp (a))
+```
+
+
+```{r}
+library(matrixcalc)
+A <- matrix( c ( 1, 2, 2, 1 ), nrow=2, byrow=TRUE)
+luA <- lu.decomposition( A )
+luA
+```
