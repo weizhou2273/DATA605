@@ -1,5 +1,5 @@
 ---
-title: "data606_hw2_WZhou"
+title: "data606_hw3_WZhou"
 author: "Wei Zhou"
 date: "9/15/2019"
 output: html_document
