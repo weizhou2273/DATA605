@@ -1,0 +1,23 @@
+---
+title: "Untitled"
+author: "Wei Zhou"
+date: "9/13/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+C10 Find the characteristic polynomial of the matrix A 
+
+```{r}
+library(pracma )
+A= matrix(c(1,2,3,4),2,2)
+A
+```
+
+```{r}
+charpoly(A)
+```
+
