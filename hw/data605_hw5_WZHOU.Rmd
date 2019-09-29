@@ -1,0 +1,81 @@
+---
+title: "data605_hw5_WZHOU"
+author: "Wei Zhou"
+date: "9/22/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Choose independently two numbers B and C at random from the interval [0, 1] with
+uniform density. Prove that B and C are proper probability distributions.
+Note that the point (B,C) is then chosen at random in the unit square.
+
+Create random variables B, C for 1000000 times
+```{r}
+n = 1000000
+B = runif(n,0,1)
+C = runif(n,0,1)
+
+```
+
+
+Prove B and C are proper probability distributions: 
+
+```{r}
+hist(B, probability = TRUE)
+hist(C, probability = TRUE)
+```
+
+
+Find the probability that
+
+### (a) B + C < 1/2.
+```{r}
+sum_BC=B+C
+P = sum(sum_BC<0.5) / 1000000
+```
+The probability that the sum of B and C falls below 12 is about `r P`.
+
+```{r}
+hist(sum_BC,probability = TRUE)
+```
+
+### (b) B×C < 1/2
+```{r}
+prod_bc = B*C
+P = sum(prod_bc<0.5) / 1000000
+```
+The probability that the production of B and C falls below 12 is about `r P`.
+
+```{r}
+hist(prod_bc,probability = TRUE)
+```
+
+
+### (c) |B−C|<1/2
+```{r}
+abs_b_c = abs(B-C)
+P = sum(abs_b_c<0.5) / 1000000
+```
+The probability is about `r P`.
+
+```{r}
+hist(abs_b_c,probability = TRUE)
+```
+
+
+### (d) max{B,C}<1/2
+```{r}
+BC_df=as.data.frame(cbind(B,C))
+BC_df = transform(BC_df, max = pmin(B,C))
+P=sum(BC_df$max<0.5)/1000000
+      
+```
+The probability is about `r P`.
+```{r}
+hist(BC_df$max)
+```
+
