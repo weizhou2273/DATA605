@@ -1,0 +1,172 @@
+---
+title: "Data605_hw6_WZHOU"
+author: "Wei Zhou"
+date: "10/5/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+1.A box contains 54 red marbles, 9 white marbles, and 75 blue marbles. If a marble is randomly selected from the box, what is the probability that it is red or blue? Express your answer as a fraction or a decimal number rounded to four decimal places.
+
+```{r}
+P = round((54+75) / (54+75+9),4)
+P
+```
+The probability that it is red or blue is `r P`
+
+
+2.You are going to play mini golf. A ball machine that contains 19 green golf balls, 20 red golf balls, 24 blue golf balls, and 17 yellow golf balls, randomly gives you your ball. What is the probability that you end up with a red golf ball? Express your answer as a simplified fraction or a decimal rounded to four decimal places.
+```{r}
+total_ball = 19+20+24+17 
+red = 20 
+P = round(red / total_ball,4) 
+```
+The probability that you end up with a red golf ball is `r P`
+
+
+3.A pizza delivery company classifies its customers by gender and location of residence. The research department has gathered data from a random sample of 1399 customers. The data is summarized in the table below.
+What is the probability that a customer is not male or does not live with parents? Write your answer as a fraction or a decimal number rounded to four decimal places.
+```{r}
+male_with_parents = 215 
+total_number = 81+116+215+130+129+228+79+252+97+72
+P = round(1- male_with_parents/total_number,4)
+
+```
+The probability that a customer is not male or does not live with parents is `r P`
+
+4.Determine if the following events are independent. Going to the gym. Losing weight
+
+Answer: Dependent
+
+
+5. A veggie wrap at City Subs is composed of 3 different vegetables and 3 different condiments wrapped up in a tortilla. If there are 8 vegetables, 7 condiments, and 3 types of tortilla available, how many different veggie wraps can be made?
+```{r}
+selections = choose(8,3) * choose(7,3)*choose(3,1)
+```
+`r selections` different veggue wraos can be made. 
+
+6. Determine if the following events are independent.
+Jeff runs out of gas on the way to work. Liz watches the evening news.
+
+Answer: Independent
+
+7. The newly elected president needs to decide the remaining 8 spots available in the cabinet he/she is appointing. If there are 14 eligible candidates for these positions (where rank matters), how many different ways can the members of the cabinet be appointed?
+```{r}
+cabinet = factorial(14) / factorial(14-8)
+```
+`r cabinet` different wayss the members of the cabinet be appointed. 
+
+
+8. A bag contains 9 red, 4 orange, and 9 green jellybeans. What is the probability of reaching into the bag and randomly withdrawing 4 jellybeans such that the number of red ones is 0, the number of orange ones is 1, and the number of green ones is 3? Write your answer as a fraction or a decimal number rounded to four decimal places.
+
+```{r}
+P=round(choose(9,0)*choose(4,1)*choose(9,3) / choose(22,4),4)
+P
+```
+The probability is 'r P'
+
+9.Evaluate the following expression.  11! / 7! 
+
+```{r}
+factorial(11) / factorial(7)
+```
+
+
+10. Describe the complement of the given event.
+
+67% of subscribers to a fitness magazine are over the age of 34.
+
+33% of subscribers to a fitness magazine are less than or equal to the age of 34. 
+
+
+11.If you throw exactly three heads in four tosses of a coin you win $97. If not, you pay me $30.
+
+Step 1. Find the expected value of the proposition. Round your answer to two decimal places.
+```{r}
+proposition = round(1/4*97 - (1-1/4)*30,2)
+```
+The expected value of the proposition is `r proposition`
+
+Step 2. If you played this game 559 times how much would you expect to win or lose? (Losses must be entered as negative.)
+```{r}
+result = 559* proposition
+```
+I would expect to win `r result`. 
+
+12. Flip a coin 9 times. If you get 4 tails or less, I will pay you $23. Otherwise you pay me $26.
+
+Step 1. Find the expected value of the proposition. Round your answer to two decimal places.
+```{r}
+P_lose = (choose(9,4) + choose(9,3) +choose(9,2)+choose(9,1)+choose(9,0) )/ 2^9
+P_win = 1-P_lose
+value =  round(P_lose*(-23)+ P_win*(26),2)
+```
+The expected value of the proposition is 'r value'
+
+Step 2. If you played this game 994 times how much would you expect to win or lose? (Losses must be entered as negative.)
+```{r}
+result = value * 994
+```
+I would expect to lose 'r result'
+
+13. The sensitivity and specificity of the polygraph has been a subject of study and debate for years. A 2001 study of the use of polygraph for screening purposes suggested that the probability of detecting a liar was .59 (sensitivity) and that the probability of detecting a "truth teller" was .90 (specificity). We estimate that about 20% of individuals selected for the screening polygraph will lie.
+
+a. What is the probability that an individual is actually a liar given that the polygraph detected him/her as such? (Show me the table or the formulaic solution or both.
+
+L= Liar 
+
+D = Detected as Liar
+
+P(L) = 0.2 
+
+P(L') = 1 - P(L) = 0.8 
+
+Sensitivity = P(D|L) = 0.59 
+
+Specificity = P(D'|L')= 0.90 
+
+P(D|L') = 1 - P(D'/L')= 0.1
+
+P(D'|L) = 1 - P(D|L)= 0.41
+ 
+P(L|D) = P(D|L) \* P(L) / P(D)  
+      
+       = P(D/L) \* P(L) / (P(D/L)*P(L) + P(D/L')*P(L'))
+       
+       = 0.59 * 0.2 / (0.59*0.2+ 0.1 *0.8)
+```{r}
+ 0.59 * 0.2 / (0.59*0.2+ 0.1 *0.8)
+```
+
+
+
+b. What is the probability that an individual is actually a truth-teller given that the polygraph detected him/her as such? (Show me the table or the formulaic solution or both.)
+
+P(L'|D') =  P(D'|L') * P(L') / P(D')
+  
+         =  P(D'|L') * P(L') / (P(D'|L')*P(L') + P(D'|L)*P(L))
+         
+         =  0.9*0.8 / (0.9*0.8+0.41*0.2)
+         
+```{r}
+0.9*0.8 / (0.9*0.8+0.41*0.2)
+
+```
+
+c. What is the probability that a randomly selected individual is either a liar or was identified as a liar by the polygraph? Be sure to write the probability statement.
+P(L or D) = P(L) + P(D) - P(L and D) 
+          
+          = P(L) + P(L'|D)
+          
+          = 0.2 + (1 - P(L|D))
+          
+          = 0.2 + (1 - 0.5959596)
+          
+          
+```{r}
+0.2 + (1 - 0.5959596)
+```
+
