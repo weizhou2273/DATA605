@@ -1,0 +1,32 @@
+---
+title: "discussion 7"
+author: "Wei Zhou"
+date: "10/13/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### The Poisson distribution with parameter lambda = .3 has been assigned for the outcome of an experiment. Let X be the outcome function. Find P(X =0), P(X = 1), and P(X > 1)
+P(X=0)
+```{r}
+library('stats')
+lambda = 0.3
+p0 = dpois(0,lambda)
+p0
+```
+
+P(X=1)
+```{r}
+p1 = dpois(1,lambda)
+p1
+```
+
+P(X>1) = 1-P(X<=1) = 1-P(X=0) - P(X=1)
+```{r}
+P = 1-p0-p1
+P
+```
+

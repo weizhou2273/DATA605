@@ -1,0 +1,86 @@
+---
+title: "Data605_hw8_WZHOU"
+author: "Wei Zhou"
+date: "10/20/2019"
+output: html_document
+---
+
+##7.11 Expected Time for Lightbulb to Fail.
+
+#### A company buys 100 light bulbs, each of which has an exponential lifetime of 1000 hours. What is the expected time for the first of these bulbs to burn out? (See Exercise 10.)
+
+Let x1,x2,x3...xn be independent exonential random variable, each of which has exponential density with mean $\mu$ and the minimum value $M$ is expoential with mean $\frac{\mu}{n}$
+
+In this case, $\mu = 1000$ hours  and n = 100, so the expected value of M = $\frac{\mu}{n} = \frac{1000}{10}$ = 10 hours. 
+
+Thus the expected time for the first of these bulbs to burn out is 10 hours. 
+
+
+##7.14  Two Exponential Densities
+####Assume that X1 and X2 are independent random variables, each having an exponential density with parameter λ. Show that Z=X1−X2 has density 
+$$f(z)=\frac{1}{2}λe^{−λ|z|}$$
+Answer: 
+
+$$\begin{equation} 
+fX_1(x) = fX_2(x) = \begin{cases}
+            \lambda e^{-\lambda x}, &x >=0 \\ 
+            0, & x<0
+            \end{cases}
+\end{equation}$$
+
+
+$$ 
+f_Z(z) = \int_{-\infty}^{\infty} fX_1(x)fX_2(x-z) \; dx
+$$
+
+
+$$
+=\int_{0}^{\infty}\lambda e^{-\lambda x} \lambda e^{-\lambda (x-z)}dx
+$$
+
+$$
+=\int_{0}^{\infty}\lambda^2e^{-2\lambda x+\lambda z}dx
+$$
+
+$$
+=\lambda e^{\lambda z} \int_{0}^{\infty}e^{-2\lambda x}dx
+$$
+
+$$
+=\frac{1}{2}λe^{−λ|z|}
+$$
+
+##8.2 CONTINUOUS RANDOM VARIABLES
+####Let X be a continuous random variable with mean μ=10 and variance σ2=100/3. Using Chebyshev’s Inequality, find an upper bound for the following probabilities.
+
+#####P(|X - 10| >= 2).
+$\delta^2 = 100/3$
+
+$\mu = 10$
+
+Given $P(|X-\mu|>= \epsilon) <= \frac{\delta^2}{\epsilon^2}$
+
+$P(|X-10|>=2) <= \frac{100/3}{2^2}$
+
+$P(|X-10|>=2) <= \frac{25}{3}$
+
+#####P(|X - 10| >= 5).
+
+$P(|X-10|>=5) <= \frac{100/3}{5^2}$
+
+$P(|X-10|>=5) <= \frac{4}{3}$
+
+
+#####P(|X - 10| >= 9).
+
+$P(|X-10|>=9) <= \frac{100/3}{9^2}$
+
+$P(|X-10|>=9) <= \frac{100}{243}$
+
+#####P(|X - 10| >= 20).
+
+
+$P(|X-10|>=20) <= \frac{100/3}{20^2}$
+
+$P(|X-10|>=20) <= \frac{1}{12}$
+
