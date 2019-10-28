@@ -1,0 +1,19 @@
+---
+title: "Discussion8"
+author: "Wei Zhou"
+date: "10/20/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Page 289 Excercis2
+```{r}
+library(discreteRV)
+x <- RV(outcomes =c(-1,0,1,2), probs =c(1/4,1/2,1/8,1/8))
+dist <- SofIID(x, 2)
+dist
+
+```
+

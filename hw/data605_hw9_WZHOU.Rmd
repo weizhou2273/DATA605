@@ -1,0 +1,105 @@
+---
+title: "data605_hw9_WZHOU"
+author: "Wei Zhou"
+date: "10/27/2019"
+output: html_document
+---
+
+##Page 363 Exercise 11
+
+#####1. The price of one share of stock in the Pilsdorff Beer Company (see Exercise 8.2.12) is given by Yn on the n th day of the year. Finn observes that the differences Xn=Yn+1−Yn appear to be independent random variables with a common distribution having mean μ=0 and variance σ2=1/4. If Y1=100, estimate the probability that Y365 is
+
+#####a. >=100 
+This can be applied as a Gaussian random 
+```{r}
+mu = 0 
+var = 1/4 
+y = 365 
+n = y-1 
+sd = sqrt(var)
+
+x = (100-100)/sqrt(n)
+
+pnorm(x, mean = 0, sd = sd, lower.tail = FALSE)
+
+
+```
+
+#####b. >=110 
+```{r}
+x <- (110-100)/sqrt(n)
+pnorm(x, mean = 0, sd = sd, lower.tail = FALSE)
+```
+
+#####c. >=120 
+```{r}
+x <- (120-100)/sqrt(n)
+pnorm(x, mean = 0, sd = sd, lower.tail = FALSE)
+```
+
+#####Question 2 
+ 
+
+For binomial distribution, $P(X=k) = {n \choose k} p^k q^{n-k}$, where $q=1-p$.
+
+The moment generating function is $M_X(t)=(q+pe^t)^n$.
+
+First moment: $M'_X(t) = n(q+pe^t)^{n-1}pe^t$.
+The expected value is the first moment evaluated at $t=0$:
+$$
+\begin{split}
+E(X)=M'_X(0) &= n(q+pe^0)^{n-1}pe^0\\
+&= n(q+p)^{n-1}p\\
+&= np(1-p+p)^{n-1}\\
+&= np1^{n-1}\\
+&=np
+\end{split}
+$$
+Second moment:  $M''_X(t) = n(n-1)(q+pe^t)^{n-2}p^2 e^{2t}+n(q+pe^t)^{n-1}pe^t$.
+Evaluate the second moment at $t=0$:
+$$
+\begin{split}
+E(X^2)=M''_X(0) &= n(n-1)(q+pe^0)^{n-2}p^2 e^0+n(q+pe^0)^{n-1}pe^0\\
+&= n(n-1)(1-p+p)^{n-2}p^2+n(1-p+p)^{n-1}p\\
+&= n(n-1)p^2+np
+\end{split}
+$$
+Variance: $V(X)=E(X^2)-E(X)^2$:
+$$
+\begin{split}
+V(X) &= n(n-1)p^2+np-n^2p^2 \\
+&= np((n-1)p+1-np) \\
+&= np(np-p+1-np) \\
+&= np(1-p) \\
+&= npq
+\end{split}
+$$
+Then we got: $E(X)=np$ and $V(X)=npq$.
+
+Reference:  http://math.arizona.edu/~tgk/464_10/chap4_9_29.pdf.
+
+
+##### Problem 3 Calculate the expected value and variance of the exponential distribution using the moment generating function.
+
+
+For exponential distribution, $f(x)=\lambda e^{-\lambda x}$.
+The moment generating function is $M_X(t)=\frac{\lambda}{\lambda-t}, t<\lambda$.
+Using WolframAlpha, we get $M'_X(t) = \frac{\lambda}{(\lambda-t)^2}$ and $M''_X(t) = \frac{2\lambda}{(\lambda-t)^3}$.
+Expected value:
+$$
+\begin{split}
+E(X)=M'_X(0) &= \frac{\lambda}{(\lambda-0)^2} \\
+&= \frac{\lambda}{\lambda^2}\\
+&= \frac{1}{\lambda}
+\end{split}
+$$
+Variance:
+$$
+\begin{split}
+V(X) = E(X^2)-E(X)^2 &= M''_X(0)-M'_X(0)^2 \\
+&=\frac{2\lambda}{(\lambda-0)^3} - \frac{1}{\lambda^2}\\
+&=\frac{2\lambda}{\lambda^3} - \frac{1}{\lambda^2}\\
+&=\frac{2}{\lambda^2} - \frac{1}{\lambda^2}\\
+&=\frac{1}{\lambda^2}
+\end{split}
+$$
