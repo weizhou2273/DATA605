@@ -1,0 +1,37 @@
+---
+title: "data605_hw10_wzhou"
+author: "Wei Zhou"
+date: "11/3/2019"
+output: html_document
+---
+
+
+####Smith is in jail and has 1 dollar; he can get out on bail if he has 8 dollars. A guard agrees to make a series of bets with him. If Smith bets A dollars, he wins A dollars with probability .4 and loses A dollars with probability .6. Find the probability that he wins 8 dollars before losing all of his money if
+
+####(a) he bets 1 dollar each time (timid strategy).
+
+This is a gambler's ruin problem. 
+Using the following equation: 
+$$P=\frac{1-(\frac{q}{p})^i}{{1-(\frac{q}{p})^N}}$$
+
+```{r}
+q=0.6 
+p=0.4 
+N=8
+i=1
+
+P= (1-(q/p)^i)/(1-(q/p)^N)
+P
+```
+Around 2.06% chance that he wins 8 dollars before losing all of his money if he bets 1 dollar each time.
+
+####(b) he bets, each time, as much as possible but not more than necessary to bring his fortune up to 8 dollars (bold strategy).
+Smith must win each time or lose everything upon the first lose. 
+```{r}
+P = 0.4^3
+P
+```
+There is 6.4% chance that Smith will win 8 dollars before losing all of his money if using the bold strategy. 
+
+####(c) Which strategy gives Smith the better chance of getting out of jail?
+By comparing the probibilities of two strategies, it seems bold strategy has better chance to win 8 dollars before losing all of his money. 

@@ -1,0 +1,22 @@
+---
+title: "Discussion_10"
+author: "Wei Zhou"
+date: "11/3/2019"
+output: html_document
+---
+
+Assume that a man’s profession can be classified as professional, skilled la- borer, or unskilled laborer. Assume that, of the sons of professional men, 80 percent are professional, 10 percent are skilled laborers, and 10 percent are unskilled laborers. In the case of sons of skilled laborers, 60 percent are skilled laborers, 20 percent are professional, and 20 percent are unskilled. Finally, in the case of unskilled laborers, 50 percent of the sons are unskilled laborers, and 25 percent each are in the other two categories. Assume that every man has at least one son, and form a Markov chain by following the profession of a randomly chosen son of a given family through several generations. Set up the matrix of transition probabilities. Find the probability that a randomly chosen grandson of an unskilled laborer is a professional man.
+
+Given the information of probabilities of sons' skill level we can get the following marklov chain matrix
+```{r}
+marklov_matrix = matrix(c(0.8,0.1,0.1,0.2,0.6,0.2,0.25,0.25,0.5), nrow=3, byrow=TRUE)
+marklov_matrix
+```
+
+```{r}
+grandson <- marklov_matrix%*%marklov_matrix
+grandson
+```
+
+We can find that 37.5% of the chance that a randomly chosen grandson of an unskilled laborer is a professional man.
+
