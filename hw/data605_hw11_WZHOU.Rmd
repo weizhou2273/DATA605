@@ -1,0 +1,89 @@
+---
+title: "Data605_hw11_WZHOU"
+author: "Wei Zhou"
+date: "11/10/2019"
+output: html_document
+---
+
+Using the “cars” dataset in R, build a linear model for stopping distance as a function of speed and replicate the analysis of your textbook chapter 3 (visualization, quality evaluation of the model, and residual analysis.)
+
+```{r, echo=FALSE}
+library(ggplot2)
+library(dplyr)
+summary(cars)
+```
+
+#### Data Visualization
+```{r}
+ggplot(data=cars, aes(cars$speed)) + 
+  geom_histogram(aes(fill = ..count..)) +
+  scale_fill_gradient("Count", low = "green", high = "red") +
+  labs(title = "Historgram - Speed") +
+  labs(x = "speed") +
+  labs(y = "Count")
+
+```
+
+```{r}
+ggplot(data=cars, aes(cars$dist)) + 
+  geom_histogram(aes(fill = ..count..)) +
+  scale_fill_gradient("Count", low = "green", high = "red") +
+  labs(title = "Historgram - Distance") +
+  labs(x = "distance ") +
+  labs(y = "Count")
+```
+
+```{r}
+ggplot(cars, aes(x=speed, y=dist)) +
+  geom_point(size=2, shape=23)
+```
+
+
+#### Statistical Analysis
+
+#####Correlation: 
+```{r}
+cor(cars$speed, cars$dist)
+```
+
+
+####Modeling
+Using the simple linear regression, yhat = a*x+b. b is the y-intercept of the line, a is the slope, x is speed and y is output dist. Using `lm` function we can have the model: 
+```{r}
+car_model = lm(cars$dist~ cars$speed)
+car_model
+
+```
+
+The regression model is 
+$$
+dist = 3.932 * speed - 17.579
+$$
+
+```{r}
+plot(x = cars$speed, y = cars$dist, main="Cars Data - R package", xlab = "Speed(mph)", ylab = "Distance(feet)")
+  abline(car_model, col="red")
+```
+
+
+
+#### Evaluating the Quality of the model
+
+```{r}
+summary(car_model)
+```
+The Multiple R-squared value 0.6511 means this moel could explain 65.11% of the data variation
+
+#### Residual Analysis
+
+```{r}
+qqnorm(resid(car_model))
+qqline(resid(car_model))
+```
+
+Based on the visualization of the residuals, we see that the two end fiverge form the QQ plot line. This indicates that the residuals are normally distributed. 
+
+
+#### Conclusion
+We see that the data has 0.8069 correlation and 65.11% multiple R -square and QQ-plot shows that using speed as the only predictor in the model is insufficient to explain the distance. Therefore, we would suggest adding other factors into the model the make the model more reliable. 
+
