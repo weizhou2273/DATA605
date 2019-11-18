@@ -1,0 +1,47 @@
+---
+title: "discussion 11"
+author: "Wei Zhou"
+date: "11/10/2019"
+output: html_document
+---
+
+```{r}
+df <-  read.csv("http://cknudson.com/data/Galton.csv")
+head(df)
+names(df)
+summary(df)
+
+```
+
+### Visualization
+```{r}
+plot(df$FatherHeight, df$Height)
+
+```
+
+
+### Modeling
+```{r}
+model <- lm(df$Height~df$FatherHeight)
+model
+
+```
+
+As we can see here our model was created under the name “model” so by just calling it’s name in a command it will show us our coefficients. We could now create a regression equation from this output:
+
+$$predictedheight=39.1104+observedfather′sheight∗.3994$$ 
+
+```{r}
+summary(model)
+```
+
+The model can only explain 7.582% of the data variation. 
+
+```{r}
+qqnorm(resid(model))
+qqline(resid(model))
+```
+
+As we can see from this plot our errors follow the straight line decently so we will say this assumption is met and discuss possible issues. The points off the line tell us that we might have skewed data or, the most likely situation, we have extreme values in our data that don’t fit well into a normal distribution.
+
+

@@ -1,0 +1,135 @@
+---
+title: "data605_hw12_WZHOU"
+author: "Wei Zhou"
+date: "11/16/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Loading Data
+```{r}
+who <- read.csv('who.csv')
+head(who)
+
+```
+
+### Exporling Data
+```{r}
+summary(who)
+```
+
+###Q1 Provide a scatterplot of LifeExp~TotExp, and run simple linear regression. Do not transform the variables. Provide and interpret the F statistics, R^2, standard error,and p-values only. Discuss whether the assumptions of simple linear regression met.
+
+
+```{r}
+library(ggplot2)
+lm <- lm(LifeExp ~ TotExp, data=who)
+ggplot(who, aes(x=TotExp, y=LifeExp)) + geom_point() +geom_smooth(method='lm')
+```
+```{r}
+cor(who$TotExp,who$LifeExp)
+```
+
+
+```{r}
+summary(lm)
+
+```
+The P-value for F-test is approximately 0, which is less than 0.05. We reject the null hypothesis,and accept that it is statistically significant. However the Adjusted R-squared is only 0.2537 ,which means it can only explain 25% of variability. the Standard error 9.371 is too high. 
+
+```{r}
+plot(lm$fitted.values, lm$residuals, 
+     xlab="Fitted", ylab="Residuals",
+     main="Residuals Plot for Linear Model")
+abline(h=0)
+plot(lm)
+
+```
+According to the diagnostic plot. we found that the constant variance condition fails and both QQ plot and residual vs.fitted value tell us that the model is not normally distributed. 
+
+
+
+### Question 2 Raise life expectancy to the 4.6 power (i.e., LifeExp^4.6). Raise total expenditures to the 0.06 power (nearly a log transform, TotExp^.06). Plot LifeExp^4.6 as a function of TotExp^.06, and r re-run the simple regression model using the transformed variables. Provide and interpret the F statistics, R^2, standard error, and p-values. Which model is “better?”
+
+```{r}
+LifeExp_n <- who$LifeExp^4.6
+TotExp_n <- who$TotExp^0.06
+
+# Linear regression model build
+lm_n <- lm(LifeExp_n ~ TotExp_n)
+ggplot(who, aes(x=TotExp_n, y=LifeExp_n)) + geom_point() +geom_smooth(method='lm')
+
+```
+```{r}
+cor(LifeExp_n,TotExp_n)
+```
+
+
+```{r}
+summary(lm_n)
+```
+
+```{r}
+plot(lm_n)
+
+```
+
+
+F−Statistic is 507.7 and the Standard Error is 90490000. The p−value is nearly 0. The correlation is 0.8543 which is much better than the previous case and R2 is 0.7298. There is a strong relationship between transformed variables TotExp and LifeExp. Therefore, we can say this transformed model is better than the previous model.
+
+
+### Question 3: Using the results from 3, forecast life expectancy when TotExp^.06 =1.5. Then forecast life expectancy when TotExp^.06=2.5:
+
+```{r}
+x = 1.5 
+le = (x * lm_n$coefficients[2] + lm_n$coefficients[1])^(1/4.6)
+le
+
+x = 2.5 
+le = (x * lm_n$coefficients[2] + lm_n$coefficients[1])^(1/4.6)
+le
+
+
+
+```
+When totexp = 1.5 the forecast life expectancy is 63.31 years and when the totexp = 2.5, the life expectancy is 86.451 years. 
+
+### Question 4: Build the following multiple regression model and interpret the F Statistics, R^2, standard error, and p-values. How good is the model?: LifeExp = b0+b1 x PropMd + b2 x TotExp +b3 x PropMD x TotExp
+
+```{r}
+lm_4 =lm(LifeExp ~ PropMD + TotExp + PropMD*TotExp, data = who)
+summary(lm_4)
+```
+
+```{r}
+ggplot(lm_4, aes(.fitted, .resid)) + 
+  geom_point(color = "black", size=2) +
+  labs(title = "Fitted Values vs Residuals") +
+  labs(x = "Fitted Values") +
+  labs(y = "Residuals")
+
+```
+F−Statistic is 34.49 and the Standard Error is 8.765. The p−value is nearly 0. The R2 is 0.3574. 
+
+The model explains only 35.74% of variability. 
+
+In this new model, we notice that the residuals are not normally distributed. 
+
+This model is not a good model to describe the relationships between variables TotExp, PropMd and LifeExp.
+
+
+### Question 5: Forecast LifeExp when PropMD=.03 and TotExp = 14. Does this forecast seem realistic? Why or why not?
+```{r}
+propmd = 0.03
+totexp = 14
+
+y =lm_4$coefficients[1] + 
+   lm_4$coefficients[2] * propmd +
+   lm_4$coefficients[3] * totexp  +
+   lm_4$coefficients[4]*propmd * totexp
+print(y)
+```
+When propmd = 0.03 and totexp = 14, the forecast value of life expectancy is 107.69 years which is unrealistic. 
+
