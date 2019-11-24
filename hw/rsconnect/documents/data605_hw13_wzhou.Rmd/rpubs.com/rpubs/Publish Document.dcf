@@ -1,0 +1,10 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/553170/609b87c652f24883900e6070fb2c8161
+bundleId: https://api.rpubs.com/api/v1/document/553170/609b87c652f24883900e6070fb2c8161
+url: http://rpubs.com/weizhou2273/553170
+when: 1574637499.19551
