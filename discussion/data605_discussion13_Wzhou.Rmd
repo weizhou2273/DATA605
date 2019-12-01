@@ -1,0 +1,58 @@
+---
+title: "Data605_discussion13_Wzhou"
+author: "Wei Zhou"
+date: "11/24/2019"
+output: html_document
+---
+
+
+Problem 6, section 7.4
+
+find the arc length of the func􀆟on on the given interval.
+
+Before we do any actual work, I suggest checking out the link below for a visual reference regarding what an arc length actually is
+https://www.mathopenref.com/arclength.html
+
+Here is the more formal definition 
+http://tutorial.math.lamar.edu/Classes/CalcII/ArcLength.aspx
+
+Let f be differentialble on an open inteval containing [a,b],where f' is also continous on [a,b]. Then the arc length of f from x=atp x=b is as follows:
+
+$$
+L=\int _{ a }^{ b }{ \sqrt { 1+(f'(x))^2}}dx 
+$$
+Find the arc length for 
+$$
+f(x)=\frac{1}{12}x^{3}-\frac{1}{x}  \\
+on [1,4]
+$$
+Before we even use the arc length formula, we need to check that the differentiability condition is satisfied on the
+given interval.
+f(x) is continous on the closed interval [1,4] however, we can not claim that f(x) is differentiable because of this. (The absolute value is a famous counter example)
+Is f(x) differentiable? Yes it is. We could show this by using the formal limit definition of the derivative but that is out of the scope for this course. We need to derive f(x) and see if f' is continous on the closed interval. 
+$$
+f(x)=\frac{1}{12}x^{3}-\frac{1}{x}\\
+f'(x)=\frac{1}{4}x^{2}+\frac{1}{x^{2}}
+$$
+We can plug in any value in the interval [1,4] and f' will NOT be undefinied. We can proceed to comput the arc length. 
+Notice that within the arc length formula, in the square root, f' is squared. We can do this first before plugging into the formula. 
+$$
+(f'(x))^{2}=(\frac{1}{4}x^{2}+\frac{1}{x^{2}})^{2}=(\frac{1}{4}x^{2}+\frac{1}{x^{2}})(\frac{1}{4}x^{2}+\frac{1}{x^{2}})\\
+=(\frac{1}{16}x^{4}+x^{2} \frac{1}{4}+x^{2}\frac{1}{4}+\frac{1}{x^{4}})=(\frac{1}{16}x^{4}+\frac{x^{2}}{2}+\frac{1}{x^{4}})
+$$
+We can proceed to evaluating the arc length 
+$$
+L=\int _{ a }^{ b }{ \sqrt { 1+(f'(x))^2}}dx \\
+\int _{ 1 }^{ 4 }{ \sqrt { 1+(\frac{1}{16}x^{8}+\frac{x^{2}}{2}+\frac{1}{x^{4}})}}dx
+$$
+We will use R to evaluate this integeral since it is not so straight forward by hand. 
+```{r}
+## define the integrated function
+integrand <- function(x)
+  {
+  sqrt(1+(1/16)*(x^8)+(1/2)*(x^2)+(1/x^4))
+  }
+## integrate the function from 0 to infinity
+integrate(integrand, lower = 1, upper = 4)
+```
+Therefore, the arc length of f(x) on [1,4] is 52.23218
