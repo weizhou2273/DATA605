@@ -1,0 +1,630 @@
+---
+title: "Data605_final_wzhou"
+author: "Wei Zhou"
+date: "12/14/2019"
+output: html_document
+---
+
+```{r,echo = FALSE,warning = FALSE, message = FALSE}
+library(randomForest)
+library(caret)
+library(MASS)
+library(Matrix)
+library(matlib)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(kableExtra)
+```
+
+##Problem 1
+
+**Calculate as a minimum the below probabilities a through c. Assume the small letter "x" is estimated as the median of the X variable, and the small letter "y" is estimated as the 1st quartile of the Y variable. Interpret the meaning of all probabilities.**
+
+Generate random variable X , Y 
+```{r}
+set.seed(12345)
+N <- 10
+n <- 10000
+mu <- sigma <- (N + 1)/2
+df <- data.frame(X = runif(n, min=1, max=N), 
+                 Y = rnorm(n, mean=mu, sd=sigma))
+summary(df$X)
+summary(df$Y)
+```
+
+Probability:
+```{r}
+## Given that: 
+x <- median(df$X)
+y <- as.numeric(quantile(df$Y)["25%"])
+x
+y
+```
+
+1. $P(X>x|X>y)$ Interpretation:Probability that X is greater than its median given that X is greater than the first quartile of Y
+
+$P(X>x|X>y) = \frac{P(X>x,X>y)}{P(X>y)}$
+
+```{r}
+P_Xx_and_Xy <- df %>%
+  filter(X > x,
+         X > y) %>%
+  nrow() / n
+P_Xy <- df %>%
+  filter(X > y) %>%
+  nrow() / n
+ans_1a <- P_Xx_and_Xy / P_Xy
+ans_1a
+```
+
+
+2. $P(X>x,Y>y)$ Interpretation: Probability that X is grater than its median and Y is greater than the first quartile of Y. 
+```{r}
+ans_1b <- df %>%
+  filter(X > x,
+         Y > y) %>%
+  nrow() / n
+ans_1b
+```
+
+3. $P(X<x|X>y)$ Interpretation: Probability that X is smaller than its median given that X is greate than the first quartile of Y. 
+
+```{r}
+P_Xsx_and_Xgy <- df %>%
+  filter(X < x,
+         X > y) %>%
+  nrow() / n
+P_Xgy <- df %>%
+  filter(X > y) %>%
+  nrow() / n
+ans_1c <- P_Xsx_and_Xgy / P_Xgy
+ans_1c
+```
+
+
+**Investigate whether P(X>x and Y>y)=P(X>x)P(Y>y) by building a table and evaluating the marginal and joint probabilities.**
+
+```{r echo=TRUE, eval=TRUE}
+# Create Joint Probabilities
+temp <- df %>%
+  mutate(A = ifelse(X > x, " X > x", " X <= x"),
+         B = ifelse(Y > y, " Y > y", " Y <= y")) %>%
+  group_by(A, B) %>%
+  summarise(count = n()) %>%
+  mutate(probability = count / n)
+# Create Marginal Probabilities
+temp <- temp %>%
+  ungroup() %>%
+  group_by(A) %>%
+  summarise(count = sum(count),
+            probability = sum(probability)) %>%
+  mutate(B = "Total") %>%
+  bind_rows(temp)
+temp <- temp %>%
+  ungroup() %>%
+  group_by(B) %>%
+  summarise(count = sum(count),
+            probability = sum(probability)) %>%
+  mutate(A = "Total") %>%
+  bind_rows(temp)
+
+# Create Table
+temp %>%
+  select(-count) %>%
+  spread(A, probability) %>%
+  rename(" " = B) %>%
+  kable() %>%
+  kable_styling()
+```
+**Check to see if independence holds by using Fisher's Exact Test and the Chi Square Test. What is the difference between the two? Which is most appropriate?**
+
+```{r, echo=TRUE, eval=TRUE, comment=NA}
+count_data <- temp %>%
+  filter(A != "Total",
+         B != "Total") %>%
+  select(-probability) %>%
+  spread(A, count) %>%
+  as.data.frame()
+row.names(count_data) <- count_data$B
+count_data <- count_data %>%
+  select(-B) %>%
+  as.matrix() 
+fisher.test(count_data)
+```
+
+```{r, echo=TRUE, eval=TRUE, comment=NA}
+chisq.test(count_data)
+```
+
+*Fisher's Exact Test is for is used when sample size less than 5, while the Chi Square Test is used when the cell sizes are large. In this case, Chi Square would be appropriate.*
+
+#Problem 2
+
+**5 points. Descriptive and Inferential Statistics. Provide univariate descriptive statistics and appropriate plots for the training data set. Provide a scatterplot matrix for at least two of the independent variables and the dependent variable. Derive a correlation matrix for any THREE quantitative variables in the dataset. Test the hypotheses that the correlations between each pairwise set of variables is 0 and provide a 80% confidence interval. Discuss the meaning of your analysis. Would you be worried about familywise error? Why or why not?**
+
+```{r, echo=FALSE}
+library(e1071)
+library(pander)
+library(ggplot2)
+library(reshape2)
+library(MASS)
+```
+
+###Load Data from Kaggle  
+
+```{r load-data}
+# Load training data from GitHub
+path <- ('https://raw.githubusercontent.com/Logan213/DATA605_Final/master/train.csv')
+con <- file(path, open="r")
+train <- read.csv(con, header=T, stringsAsFactors = F)
+close(con)
+# Load test data from GitHub
+path <- ('https://raw.githubusercontent.com/Logan213/DATA605_Final/master/test.csv')
+con <- file(path, open="r")
+test <- read.csv(con, header=T, stringsAsFactors = F)
+close(con)
+```
+
+###Define X & Y Variables  
+Pick one of the quantitative independent variables from the training data set (train.csv), and define that variable as X. Make sure this variable is skewed to the right! Pick the dependent variable and define it as Y.  
+
+Looking at the mean and median values of each variable, as given by the `summary` function, we can choose our right-skewed variable to represent "X" by using a predictor whose mean is larger than the median. The variables that appear to be the most right-skewed are `LotArea`, `TotalBsmtSF`, `GrLivArea`, `X1stFlrSF`, `BsmtFinSF1`, `MasVnrArea`, `OverallCond`. `LotArea` seems to be more skewed than the others, so this will be chosen as our X variable.  `SalePrice` is the dependent variable, and we will define it as Y.   
+
+```{r define_XY}
+X <- train$LotArea
+Y <- train$SalePrice
+```  
+
+###Probability.  
+
+Calculate as a minimum the below probabilities a through c.  Assume the small letter "x" is estimated as the 3d quartile of the X variable, and the small letter "y" is estimated as the 2d quartile of the Y variable.  Interpret the meaning of all probabilities.    
+
+```{r}
+# obtain quartiles for X
+quantile(X)
+```  
+
+For the X variable, the 3^rd^ quartile is 11601.5. 25% of the case have a `LotArea` equal to this or larger.
+
+```{r}
+# obtain quartiles for Y
+quantile(Y)
+```  
+
+For the Y variable, the 2^nd^ quartile is 163000. 50% of the cases have a `SalePrice` equal to this or lower, while 50% are above this sale price ($\geq$ $163,000.01).  
+
+####Probabilities  
+
+####Make a table of counts.  
+
+```{r quartile_counts}
+# set counts of quartiles for X and Y
+leq_3d_qtl <- X <= 11601.5
+grtr_3d_qtl <- X > 11601.5
+leq_2d_qtl <- Y <= 163000
+grtr_2d_qtl <- Y > 163000
+# Table First Row
+row1_1 <- sum(leq_3d_qtl & leq_2d_qtl)  # <= x and <= y
+row1_2 <- sum(leq_3d_qtl & grtr_2d_qtl)  # <= x and > y
+row1_tot <- row1_1 + row1_2
+# Table Second Row
+row2_1 <- sum(grtr_3d_qtl & leq_2d_qtl)  # > x and <= y
+row2_2 <- sum(grtr_3d_qtl & grtr_2d_qtl)  # > x and > y
+row2_tot <- row2_1 + row2_2 
+#Totals
+col1_tot <- row1_1 + row2_1
+col2_tot <- row1_2 + row2_2
+col3_tot <- col1_tot + col2_tot
+```  
+
+| x/y | $\leq$ 2d quartile | > 2d quartile | Total |  
+|:--- | ----------------: | ------------: | ----: |  
+| $\leq$ 3d quartile | 643 | 452 | 1095 |  
+| > 3d quartile | 89 | 276 | 365 |  
+| Total | 732 | 728 | 1460 |  
+
+a) P(X > x | Y > y) = 276 / 728 = **0.3791209**  
+
+The first probability is the P that a value of X is greater than the 3^rd^ quartile, *given* that a value of Y is greater than the 2^nd^ quartile. Since we are only looking at values of X given these values of Y, we will use the total of Y values that meet this requirement (728), and divide the number of X > x (276) by that Y total.  
+
+b) P(X > x, Y > y) = 276 / 1460 = **0.1890411**  
+
+The second probability is the intersection of the quantity of values of X greater than the 3^rd^ quartile *and* the quantity of values of Y greater than the median. We simply take the value in the table that meets these requirements (276) and divide by the total number of cases (1460) to get the probability.  
+
+c) P(X < x | Y > y) = 452 / 728 = **0.6208791**  
+
+The third probability is the probability that X is less than the 3^rd^ quartile of X, given that Y is greater than the 2^nd^ quartile (median) of Y.  Looking at the table, we take the quantity of values of X that are less than or equal to x. Since this is given Y being greater than the median, we use the total of the second column in the table below.  
+
+####Does splitting the training data in this fashion make them independent?  
+Let A be the new variable counting those observations above the 3d quartile for X, and let B be the new variable counting those observations for the 2d quartile for Y. 
+
+```{r independence}
+A <- row2_tot  # all cases above 3d quartile of X
+B <- col2_tot  # all cases greater than median of Y
+```  
+
+####Does P(A|B) = P(A)P(B)? Check mathematically:  
+
+We already have P(A|B) (728 cases where Y > y; 276 cases of X > x given this.), which is 276/728 = 0.3791.  To find P(A)P(B), we need to find P(A) and P(B) by simply dividing `A` and `B` from above by the total number of cases.  
+
+```{r PA_PB}
+PA <- A / col3_tot
+PB <- B / col3_tot
+PA * PB
+```  
+
+P(A)P(B) is 0.1246575, or approximately 1/8.  This makes sense since x is the values greater than the 3^rd^ quartile of X (1/4), and y is half of the number of cases. Half of 1/4 is 0.125.  
+
+If the values were independent, then whatever B is would have no affect on A in P(A|B), and P(A|B) would equal P(A). Since they are not equal, the values are not independent.  
+
+####Evaluate by running a Chi Square test for association.  
+
+Chi-square is the sum of the squared difference between observed and the expected data, divided by the expected data in all possible categories. Using this, the hypothesis that X (`LotArea`) is independent from Y (`SalePrice`), with a p-value of 0.05. R has a built-in function for this test:  
+
+```{r chi_sq, message=FALSE}
+chisq.test(X, Y)
+```  
+
+The resulting p-value is much smaller than 0.05, so we reject the null hypothesis that X is independent from Y.  
+
+###Descriptive and Inferential Statistics.  
+
+####Provide univariate descriptive statistics and appropriate plots for the training data set.  
+
+Due to the number of variables (81), a table of descriptive statistics for the numerical variables has been created. The table displays the mean, minimum value, median, maximum value, IQR, standard deviation, and skewness, as computed by the same function in the `e1071` package.  
+
+```{r var_type_count}
+# number of variable types
+table(sapply(train, class))
+```  
+
+Only numerical predictors were used, as there are 40+ character vectors. We could split up these character vectors by making binary categorical variables (1 for a value, 0 if not) for each value within the character vector, however this will result in many variables, most which probably won't have great significance on predicting the Sale Price of the property in a later section when we need to create a model.  
+
+```{r}
+# subset training data numerical values
+train_int <- train[c(2, 4, 5, 18:21, 27, 35, 37:39, 44:53, 55, 57, 60, 62:63, 67:72, 76:78, 81)]
+means <- sapply(train_int, function(y) mean(y, na.rm = TRUE))
+mins <- sapply(train_int, function(y) min(y, na.rm=TRUE))
+medians <- sapply(train_int, function(y) median(y, na.rm = TRUE))
+maxs <- sapply(train_int, function(y) max(y, na.rm=TRUE))
+IQRs <- sapply(train_int, function(y) IQR(y, na.rm = TRUE))
+SDs <- sapply(train_int, function(y) sd(y, na.rm = T))
+skews <- sapply(train_int, function(y) skewness(y, na.rm = TRUE))
+datasummary <- data.frame(means, mins, medians, maxs, IQRs, SDs, skews)
+colnames(datasummary) <- c("MEAN", "MIN","MEDIAN", "MAX", "IQR", "STD. DEV", "SKEW")
+datasummary <- round(datasummary, 2)
+pander(datasummary)
+```  
+
+To illustrate the descriptive statistics in the numeric variables, box plots have been created below. These plots were used because they effectively show the spread and skewness of the data, the mean, as well as any outliers.
+
+```{r, fig.width=10, fig.height=8}
+train_int_melted <- melt(train_int)
+ggplot(train_int_melted, aes(variable, value)) + geom_boxplot(aes(fill = variable), alpha = 0.75, show.legend = FALSE) + facet_wrap(~variable, scale="free") + scale_y_continuous('') + scale_x_discrete('', breaks = NULL) + ggtitle("Distribution of Predictor and Target Variables\n")
+```  
+
+####Provide a scatterplot of X and Y.   
+
+```{r scatter_plot, fig.width=10, fig.height=8}
+ggplot(train, aes(X, Y)) + geom_point(color="royalblue", alpha=.3) + labs(list(title="Relationship of Home Sale Price to Lot Size", x = "X, Lot Area", y = "Y, Sale Price")) + scale_y_continuous(labels = scales::dollar)
+```  
+
+Looking at the above scatterplot, there is a very light linear relationship between the lot size and sale price of the house. Most of the sale prices are concentrated between $100k and $300k, while the lot sizes have much less spread. The larger lot sizes do not necessarily belong to the most expensive properties, which is why we do not see a stronger correlation. In fact, there are a handful of cases where the lot size is really skewing the relationship between the variable and the sale price of the property.  
+
+####Provide a 95% CI for the difference in the mean of the variables.  
+
+The table below shows the number of cases, mean, and standard deviation for the X and Y variables:  
+
+| VAR | n | $\bar{x}$ | $s$ |  
+| --- | - | ------- | --- |  
+| X | 1460 | 10516.83 | 9981.265 |  
+| Y | 1460 | 180921.2 | 79442.5 |  
+
+We can derive the point estimate (the difference in means) by subtracting the mean of Y from the mean of X. 
+
+The difference in means (point estimate) = -170404.4
+
+To get the standard error ($SE$) of the point estimate, we take the sum of the variance divided by the sample size, and take the square root of that value:
+
+```{r SE}
+# Standard Error of Point Estimate
+sqrt((var(X) / length(X)) + (var(Y) / length(Y)))
+```
+
+SE = 2095.451
+
+The T-score is the point estimate divided by the standard error:
+
+T = -170404.4 / 2095.451 = -81.321
+
+The confidence level for the difference in means can be calculated by taking the point estimate $\pm$ the t-value associated with the degrees of freedom $\times$ the standard error. Here we will use R's `t.test` function to calculate the 95% confidence level that the difference in means is not zero:  
+
+```{r t_test}
+t.test(X, Y)
+```  
+
+From the output, the 95% confidence interval that the true difference in means lies between -174514.7 and -166294.1. The results are negative because the mean of Y is much larger than the mean of X. 
+
+Since $\alpha$ is much smaller than 0.05, we reject the null hypothesis ($H_0$) that the difference in means is equal to zero.  
+
+####Derive a correlation matrix for two of the quantitative variables you selected.  
+
+By combining the X (`LotArea`) and Y (`SalePrice`) variables together, a correlation matrix can be created using R's `cor` function
+
+```{r cor_matrix}
+XY <- data.frame(X, Y)
+cor_matrix <- cor(XY)
+cor_matrix
+```  
+
+The correlation matrix shows a weak positive correlation between the Lot Area and the Sale Price of the home. We might find a stronger correlation if the handful of larger lots that sold for a lesser amount were removed.  
+
+Below, a scatterplot of the relationship between X and Y is created. This is usually much more useful when examining the relationship between many variables. Here, this is just the scatterplot created above, with another version (top left) with the Y values on the bottom. These are the values comprising the correlation matrix above, visualized.
+
+```{r cor_plot, fig.width=10, fig.height=8}
+# scatterplots of X-Y relationship
+pairs(~X+Y, data=XY, main="Relationship of X and Y Variables", col="slategrey")
+```  
+
+####Test the hypothesis that the correlation between these variables is 0 and provide a 99% confidence interval.  Discuss the meaning of your analysis.
+
+Given a null hypothesis that there is no correlation between the X and Y variables (cor = 0), we can use Pearson's product-moment correlation, which measures the linear dependence between variables. Using Rs `cor.test` function, we can easily calculate this correlation, and the t-test for the significance of the Pearson coefficient.  
+
+```{r cor_test}
+cor.test(X, Y, conf.level=0.99, method="pearson")
+```  
+
+The correlation coefficient is 0.2638434, which is not zero. Also, the p-value associated with the t-test is much smaller than .01. Therefore, we can reject the null hypothesis, and accept the alternative hypothesis that the correlation is not equal to zero.  
+
+The interval in which we have 99% confidence that this value lies is 0.2000196 to 0.3254375.  
+
+###Linear Algebra and Correlation.  
+
+####Invert your correlation matrix.  
+**This is known as the precision matrix and contains variance inflation factors on the diagonal.**  
+
+```{r prec_matrix}
+prec_matrix <- solve(cor_matrix)
+prec_matrix
+```  
+
+This inverted correlation matrix has variance inflation factors on the diagonal, which are a function of how closely one variable is a linear function of the other variable.  
+
+####Multiply the correlation matrix by the precision matrix, and then multiply the precision matrix by the correlation matrix.  
+
+```{r cor_x_prec}
+cor_matrix %*% prec_matrix
+```  
+
+```{r prec_x_cor}
+prec_matrix %*% cor_matrix
+```  
+
+Since the precision matrix is the inverse of the correlation matrix, multiplying the two together will result in the identity matrix, which we see in the resulting $2 \times 2$ matrix with 1s on the diagonal.  
+
+In the above process, we switched the order of multiplying the correlation and the precision matrix, both resulting in an identity matrix. This is proving that the correlation matrix is invertible, since
+
+$A^{-1}A = I$ and $AA^{-1} = I$
+
+####Conduct principle components analysis (research this!) and interpret. Discuss.  
+
+When a large number of variables are present in a data set (such as the one we are currently working with), principle components analysis can help to extract important variables, or reduce dimensionality of the data. Using the real estate data, which has 1460 rows and 81 variables (columns), this would give us a 1460 x 81 matrix - that's a lot of dimensions.  
+
+In order to perform PCA, the values of X and Y need to be adjusted so that the mean of the data is 0. This adjustment is made by subtracting the mean of each variable from the variable itself ($X - \bar{X}$).
+
+```{r adjust_XY}
+adj_X <- (X - mean(X))
+adj_Y <- (Y - mean(Y))
+```  
+
+The mean of each adjusted vector is just about zero. The difference is probably due to precision in the calculation:
+
+```{r mean_adjXY}
+mean(adj_X)
+mean(adj_Y)
+```
+
+Next, the covariance matrix of the two adjusted variables is calculated. Covariance is the difference between the observed value of X and $\bar{X}$ multiplied by the difference between the observed value of Y and $\bar{Y}$. The covariance matrix is each one of these values calculated for each observation in the data, and put into a matrix in this format:  
+
+$$C^{n \times n} = (c_{i,j}, c_{i,j} = cov(Dim_{i}, Dim_{j}))$$  
+
+The covariance matrix for the X and Y variables will have the covariance between the variables themselves on the diagonal ($cov(X, X)$ and $cov(Y, Y)$), and the covariance of each variable in the other locations. Since $cov(a, b) = cov(b, a)$, we see the same value in the $2 \times 2$ matrix that is the result of these calculations:  
+
+```{r cov_adjXY}
+adj_XY <- data.frame(adj_X, adj_Y)
+cov_adjXY <- cov(adj_XY)
+cov_adjXY
+```  
+
+The non-diagonal values in the covariance matrix are positive, which coincides with the movement of the X and Y variables increasing together, as demonstrated previously.
+
+Now that we have the covariance matrix, because it is a square matrix, we can calculate eigenvectors and eigenvalues of the covariance matrix. 
+
+```{r eigen_covXY}
+eig_cov_adjXY <- eigen(cov_adjXY)
+eig_cov_adjXY$values
+eig_cov_adjXY$vectors
+```  
+
+The eigenvectors of the covariance matrix will give lines that fit the data in a way that a common regression line would. Below is a plot of the eigenvectors overlaid on top of the plotted adjusted data.
+
+```{r eig_plot, fig.width=10, fig.height=8}
+plot(adj_X, adj_Y, main="Eigenvectors of Covariance Matrix"); abline(h=0, v=0, lty=3)
+abline(a=0, b=(eig_cov_adjXY$vectors[1,1]/eig_cov_adjXY$vectors[2,1]), col="red")
+abline(a=0, b=(eig_cov_adjXY$vectors[1,2]/eig_cov_adjXY$vectors[2,2]), col="blue")
+```
+
+The plot of eigenvectors on the plot don't quite look orthogonal, but if we multiply the eigenvectors of the covariance matrix together, they will equal 0, meaning they are in fact, orthogonal.  
+
+```{r}
+eig_cov_adjXY$vectors[,1] %*% eig_cov_adjXY$vectors[,2]
+```  
+
+The eigenvector with the higher associated eigenvalue is the first principle component of the data; this eigenvector has the most significant relationship with X and Y. In PCA, the eigenvectors are ordered by their eigenvalues, from largest to smallest.  
+
+With a larger set of variables, the principle components with smaller eigenvalues can be dropped. This will result in some loss of information, but also a dataset with reduced dimensions. Since we only have one variable and response, the first principal component explains the variability in the data. Once the principle components are decided upon, a new dataset is created using the matrix of eigenvectors transposed, multiplied by the mean-adjusted data, also transposed. What results is the data rotated so that the eigenvectors are the x and y axes. 
+
+If we were to choose the first principle component (X), what would result is just a one-dimensional dataset, again, explaining the variability within this predictor variable.  
+
+R also has a built-in function for doing PCA, `prcomp`. This function does all of the above steps (normalizing the variables by subtracting the mean, getting the covariance matrix, then calculating the eigenvalues), and we can see the results equal the given eigenvectors calculated above:  
+
+```{r prcomp}
+pcaXY <- prcomp(XY, center=TRUE)
+pcaXY
+summary(pcaXY)
+```
+
+###Calculus-Based Probability & Statistics.  
+
+####For your variable that is skewed to the right, shift it so that the minimum value is above zero.  
+
+The minimum value of X (`LotArea`) is skewed to the right, but the lowest value is already above zero, as no negative lot sizes exist in the data set. In fact, none of the numerical variables have any values below 0, as indicated in the table in the descirptive statistics section.  
+
+```{r min_X_val}
+min(X)
+```  
+
+####Load the MASS package and run `fitdistr` to fit an **exponential** probability density function.  
+(See  https://stat.ethz.ch/R-manual/R-devel/library/MASS/html/fitdistr.html).  
+
+```{r fitdistr}
+expdf <- fitdistr(X, densfun="exponential")
+```
+
+####Find the optimal value of $\lambda$ for this distribution.  
+
+In many examples, the exponential distribution is used to explain the probability of events occurring over a period of time (time elapsed between customers, weather events, phone calls, etc.). The probability of the even occurring is proportional to the length of the interval. In other words, if an event happens six times in an hour, $\lambda = 6$, and the optimal value of $\lambda$ would be the the average wait time ($\frac{1}{\lambda}$, or 10 minutes), or the expected value.  
+
+For this distribution, a skewed variable of lot sizes in properties for sale was used. Instead of moments in time, $\lambda$ is representing the increase in size of the property's lot area.  
+
+```{r optimal_lambda}
+# get value of lambda from exponential distribution
+lambda <- expdf$estimate
+# expected value of lambda
+rate <- 1 / lambda
+rate
+```  
+
+We can see that this is the same as the mean given in the descriptive statistics for the X variable (`LotArea`). Also, the value of $\lambda$ is equal to one divided by this optimal value of lambda ($\frac{1}{1056.83}$).  
+
+####Then, take 1000 samples from this exponential distribution using this value.
+*(e.g., `rexp(1000, some_val`))*
+
+```{r thou_samp}
+# 1000 samples from expon. dist. using lambda
+expdf_samp <- rexp(1000, lambda)
+```
+
+####Plot a histogram and compare it with a histogram of your original variable.   
+
+A histogram of the exponential fit of the original X variable (`LotArea`) is below:  
+
+```{r hist_expdf}
+hist(expdf_samp, col="royalblue", main="Histogram of Exponential Fit of X")
+```
+
+Here we see that the histogram follows the pattern of an exponential pdf; the highest count of values is first, and successively gets smaller with each bin. The distribution is right-skewed, but evenly.  
+
+Below is a histogram of the original X variable, without the exponential fit:  
+
+```{r hist_x}
+hist(X, col="royalblue", main="Histogram of X Variable", breaks=20)
+```  
+
+The histogram of the original X variable is right-skewed, but much more so than the exponential fit of X. Looking at summary statistics supports illustrates the difference in the spread of the data.  
+
+Summary Stats of Exponential Fit of X:
+```{r}
+summary(expdf_samp)
+```  
+
+Summary Stats of X:
+```{r}
+summary(X)
+```  
+
+The values of the observations of X are much more spread out, with the difference between the minimum and maximum value being 213945, but only 61169.37 in the exponential fit of X.  
+
+####Using the exponential pdf, find the 5th and 95th percentiles using the cumulative distribution function (CDF).   
+
+```{r exp_5_95}
+# 5 and 95 percentile of exponential pdf
+qexp(c(.05, .95), rate = lambda)
+```
+
+####Generate a 95% confidence interval from the empirical data, assuming normality.  
+
+Assuming normality (normally distributed) for the originally observed data for X, another of R's distribution functions (`rbinom`, `rpois`, `rexp`, etc.) can be used to generate the 95% confidence interval. Unlike the problem above, we are not looking for the 5^th^ and 95^th^ percentiles, but the 95% ci (0.05 / 2, because of two-tails).
+
+```{r ci_normal}
+qnorm(c(.025, .975), mean=mean(X), sd=sd(X))
+```  
+
+If the data for our X variable were normally distributed, the true value of the mean would lie between -9046.1 and 30079.748 in 95% of the sample intervals taken.  
+
+####Finally, provide the empirical 5th percentile and 95th percentile of the data.  Discuss.  
+
+As performed in the first (probability) section, the 3^rd^ quartile of X and 2^nd^ quartile of Y were calculated using the `quantile` function in R. The same can be done to provide the 5^th^ and 95^th^ percentile of the observed values of X.  
+
+```{r 5_95_x}
+# 5th and 95th percentiles of empirical data X var
+quantile(X, c(.05, .95))
+```  
+
+5% of the values will be equal to 3311.70 or less, and 5% of the values will be equal to or greater than 17401.15. 90% of the values will be in-between these two percentiles, so we essentially have a 90% confidence interval. 
+
+###Modeling  
+
+In the descriptive statistics section, the number of categorical variables was found to be over 40. In keeping things somewhat simple, the subset of the `train` dataset's numerical variables (minus the `Id` variable) is used for creating a predictive model.  
+
+First, a linear model using all of the numerical predictors is used:  
+
+```{r model_all}
+model0 <- glm(SalePrice ~ ., data=train_int)
+full_mod_summ <- summary(model0)
+```  
+
+From the summary output, there are a number of predictor variables that have been flagged as highly significant (`***`). Let's build a model using these highly-significant predictors:  
+
+```{r model_1}
+# AIC 34834
+model1 <- glm(SalePrice ~ MSSubClass + LotArea + OverallQual + OverallCond + YearBuilt + X1stFlrSF + X2ndFlrSF + BedroomAbvGr + GarageCars, data=train_int)
+summary(model1)
+```  
+
+Another model is built using a log transformation on the `LotArea` variable, and replacing the `X1stFlrSF`, `X2ndFlrSF`, and `BedroomAbvGr` with `GrLivArea` and `Fireplaces`:   
+
+```{r model_2}
+# AIC 34891
+model2 <- glm(SalePrice ~ MSSubClass + log(LotArea) + OverallQual + OverallCond + YearBuilt + GrLivArea + GarageCars + Fireplaces, data=train_int)
+summary(model2)
+```  
+
+Lastly, a model using only a few predictors is built:  
+
+```{r model_3}
+# AIC 35003
+model3 <- glm(log(SalePrice) ~ log(LotArea) + OverallQual + YearBuilt + GrLivArea, data=train_int)
+summary(model3)
+```  
+
+Looking at the coefficients for the predictor variables, we can see they all have a positive estimate, though all are very small values. This makes sense, since we can generally assume that the Lot size, Quality, year a property was built, and square footage of the home would have a positive relationships to the price (i.e. large, well-built, new houses on lots of land cost more). 
+
+The biggest difference for this model is transforming the response variable, since it is also skewed, but because of its simplicity, we'll use this for predicting the Sale Price of the properties in the Kaggle dataset.  Using R's `predict` function, we'll feed it the third reduced model, the test dataset, and store the results in an object.  
+
+```{r}
+predict_price <- predict(model3, test, type="response")
+```  
+
+Taking this resulting vector, we'll bind it to the `Id` column of the test data, then create a .csv from the data.  
+
+```{r}
+results <- data.frame(test$Id, exp(predict_price))  # use exp to transform the log of the response variable back
+colnames(results) <- c("Id", "SalePrice")
+head(results)
+# Write to .csv for submission to Kaggle
+# write.csv(results, file = "predicted_prices.csv", row.names = FALSE) # not for rendering R Markdown
+```  
+
+My Kaggle user name is **Logan T**, and the resulting score on Kaggle.com from this model is 0.16805. Certainly not the best, but not bad for a a first, solo attempt!  
